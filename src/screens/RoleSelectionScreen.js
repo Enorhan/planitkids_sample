@@ -14,7 +14,10 @@ export default function RoleSelectionScreen({ navigation }) {
             >
                 <Text style={styles.buttonText}>Fritidsledare</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => navigation.navigate('FritidspersonalDashboard')}
+                activeOpacity={0.8}>
                 <Text style={styles.buttonText}>Fritidspersonal</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} activeOpacity={0.8}>

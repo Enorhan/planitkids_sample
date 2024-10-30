@@ -6,19 +6,15 @@ import { Picker } from '@react-native-picker/picker';
 export default function WhatsToday() {
     const activityOptions = ["Pyssel", "Utomhus", "Film", "Tema Arbete", "Bakning"];
 
-    // Sample images for testing
-    const sampleImages = [
-        "https://randomuser.me/api/portraits/men/1.jpg",
-        "https://randomuser.me/api/portraits/women/2.jpg",
-        "https://randomuser.me/api/portraits/men/3.jpg",
-    ];
-
-    // State for activity details
+    // State to hold all activities
     const [activities, setActivities] = useState([
-        { activityType: "Pyssel", fromTime: "", toTime: "", where: "", profilePictures: [sampleImages[0], sampleImages[1], sampleImages[2]] },
-        { activityType: "Utomhus", fromTime: "", toTime: "", where: "", profilePictures: [sampleImages[1], sampleImages[2], sampleImages[0]] },
-        { activityType: "Film", fromTime: "", toTime: "", where: "", profilePictures: [sampleImages[2], sampleImages[0], sampleImages[1]] }
+        { activityType: "Pyssel", fromTime: "", toTime: "", where: "", profilePictures: [null, null, null] }
     ]);
+
+    // Function to add a new activity template
+    const addActivity = () => {
+        setActivities([...activities, { activityType: "Pussel", fromTime: "", toTime: "", where: "", profilePictures: [null, null, null] }]);
+    };
 
     // Update a specific field for an activity
     const updateActivity = (index, field, value) => {
@@ -43,9 +39,9 @@ export default function WhatsToday() {
             "Assign Teacher",
             "Choose a teacher to assign",
             [
-                { text: "Teacher A", onPress: () => assignProfile(activityIndex, profileIndex, sampleImages[0]) },
-                { text: "Teacher B", onPress: () => assignProfile(activityIndex, profileIndex, sampleImages[1]) },
-                { text: "Teacher C", onPress: () => assignProfile(activityIndex, profileIndex, sampleImages[2]) },
+                { text: "Teacher A", onPress: () => assignProfile(activityIndex, profileIndex, "https://via.placeholder.com/60") },
+                { text: "Teacher B", onPress: () => assignProfile(activityIndex, profileIndex, "https://via.placeholder.com/60") },
+                { text: "Teacher C", onPress: () => assignProfile(activityIndex, profileIndex, "https://via.placeholder.com/60") },
             ],
             { cancelable: true }
         );
@@ -66,11 +62,11 @@ export default function WhatsToday() {
                     {/* Activity Dropdown */}
                     <Picker
                         selectedValue={activity.activityType}
-                        style={[styles.picker, { color: '#FFC0CB' }]} // Pink color for Picker text
+                        style={[styles.picker, { color: '#FFC0CB' }]}
                         onValueChange={(itemValue) => updateActivity(index, 'activityType', itemValue)}
                     >
                         {activityOptions.map((option) => (
-                            <Picker.Item label={option} value={option} key={option} color="#FFC0CB" /> // Pink color for each item
+                            <Picker.Item label={option} value={option} key={option} color="#FFC0CB" />
                         ))}
                     </Picker>
 
@@ -78,7 +74,7 @@ export default function WhatsToday() {
                     <TextInput
                         style={styles.input}
                         placeholder="Where"
-                        placeholderTextColor="#FFC0CB" // Pink placeholder text
+                        placeholderTextColor="#FFC0CB"
                         value={activity.where}
                         onChangeText={(text) => updateActivity(index, 'where', text)}
                     />
@@ -89,7 +85,7 @@ export default function WhatsToday() {
                         <TextInput
                             style={styles.timeInput}
                             placeholder="HH:MM"
-                            placeholderTextColor="#FFC0CB" // Pink placeholder text
+                            placeholderTextColor="#FFC0CB"
                             keyboardType="numeric"
                             value={activity.fromTime}
                             onChangeText={(text) => handleTimeChange(text, index, 'fromTime')}
@@ -98,7 +94,7 @@ export default function WhatsToday() {
                         <TextInput
                             style={styles.timeInput}
                             placeholder="HH:MM"
-                            placeholderTextColor="#FFC0CB" // Pink placeholder text
+                            placeholderTextColor="#FFC0CB"
                             keyboardType="numeric"
                             value={activity.toTime}
                             onChangeText={(text) => handleTimeChange(text, index, 'toTime')}
@@ -109,11 +105,11 @@ export default function WhatsToday() {
                     <TextInput
                         style={styles.detailsInput}
                         placeholder="Activity details/explanation"
-                        placeholderTextColor="#FFC0CB" // Pink placeholder text
+                        placeholderTextColor="#FFC0CB"
                         multiline
                     />
 
-                    {/* Profile Pictures */}
+                    {/* Profile Pictures with Visible Placeholders */}
                     <View style={styles.profileIconsContainer}>
                         <Text style={styles.assignLabel}>Assigned Teachers:</Text>
                         <View style={styles.profileIcons}>
@@ -121,7 +117,7 @@ export default function WhatsToday() {
                                 <TouchableOpacity key={i} onPress={() => handleProfileSelect(index, i)}>
                                     <Image
                                         style={styles.profileIconExtraLarge}
-                                        source={{ uri: profile }}
+                                        source={{ uri: profile || 'https://via.placeholder.com/80?text=+' }}
                                     />
                                 </TouchableOpacity>
                             ))}
@@ -129,6 +125,11 @@ export default function WhatsToday() {
                     </View>
                 </View>
             ))}
+
+            {/* Add Activity Button */}
+            <TouchableOpacity style={styles.addButton} onPress={addActivity}>
+                <Text style={styles.addButtonText}>+ Add Activity</Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
     },
     input: {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        color: '#FFC0CB', // Pink input text color
+        color: '#FFC0CB',
         borderRadius: 8,
         padding: 10,
         marginBottom: 10,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     },
     timeInput: {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        color: '#FFC0CB', // Pink input text color
+        color: '#FFC0CB',
         borderRadius: 8,
         padding: 10,
         width: 60,
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
     },
     detailsInput: {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        color: '#FFC0CB', // Pink input text color
+        color: '#FFC0CB',
         borderRadius: 8,
         padding: 10,
         textAlignVertical: 'top',
@@ -205,9 +206,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     profileIconExtraLarge: {
-        width: 70, // Larger profile icon width
-        height: 70, // Larger profile icon height
+        width: 70,
+        height: 70,
         borderRadius: 35,
         marginRight: 10,
+        borderColor: '#FFC0CB',
+        borderWidth: 1,
+    },
+    addButton: {
+        backgroundColor: '#FFC0CB',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10,
+        width: '80%',
+    },
+    addButtonText: {
+        color: '#4B0082',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });

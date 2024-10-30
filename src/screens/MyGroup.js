@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { MaterialIcons } from '@expo/vector-icons';
 
-export default function MyGroup() {
-    // Sample data for students in each class
+export default function MyGroup({ navigation }) {
     const initialClassData = {
-        "F Klassen": ["Ali", "Sara", "Emma"],
+        "F-klassen": ["Ali", "Sara", "Emma"],
         "Åk 1": ["Hasan", "Lina", "Eli"],
         "Åk 2": ["Oscar", "Mia", "Nora"],
         "Åk 3": ["Leo", "Sofia", "Max"],
@@ -18,14 +18,12 @@ export default function MyGroup() {
 
     const [classData, setClassData] = useState(initialClassData);
     const [selectedStudents, setSelectedStudents] = useState([]);
-    const [pendingSelection, setPendingSelection] = useState({}); // Temporarily holds selected students until added
+    const [pendingSelection, setPendingSelection] = useState({});
 
-    // Handle selecting a student from the dropdown
     const handleStudentSelect = (className, student) => {
         setPendingSelection({ ...pendingSelection, [className]: student });
     };
 
-    // Handle adding a student to the selected list
     const addStudent = (className) => {
         const student = pendingSelection[className];
         setSelectedStudents([...selectedStudents, { name: student, class: className }]);
@@ -35,11 +33,9 @@ export default function MyGroup() {
             [className]: classData[className].filter((s) => s !== student),
         });
 
-        // Clear the pending selection after adding the student
         setPendingSelection({ ...pendingSelection, [className]: null });
     };
 
-    // Handle removing a student from the selected list
     const removeStudent = (student) => {
         const { name, class: className } = student;
         setSelectedStudents(selectedStudents.filter((s) => s.name !== name));
@@ -51,6 +47,11 @@ export default function MyGroup() {
 
     return (
         <View style={styles.container}>
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
+            </TouchableOpacity>
+
             <Text style={styles.title}>My Group (Fritidspersonal)</Text>
 
             {/* Selected Students Scrollable Box */}
@@ -75,12 +76,12 @@ export default function MyGroup() {
                         <Text style={styles.classTitle}>{className}</Text>
                         <Picker
                             selectedValue={pendingSelection[className] || null}
-                            style={[styles.picker, { color: '#FFC0CB' }]} // Pink text in Picker
+                            style={[styles.picker, { color: '#FFC0CB' }]}
                             onValueChange={(student) => handleStudentSelect(className, student)}
                         >
                             <Picker.Item label={`Select a student from ${className}`} value={null} color="#FFC0CB" />
                             {classData[className].map((student) => (
-                                <Picker.Item label={student} value={student} key={student} color="#FFC0CB" /> // Pink color for each item
+                                <Picker.Item label={student} value={student} key={student} color="#FFC0CB" />
                             ))}
                         </Picker>
 
@@ -106,12 +107,18 @@ const styles = StyleSheet.create({
         backgroundColor: '#4B0082',
         padding: 16,
     },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 16,
+    },
     title: {
         fontSize: 24,
         color: '#FFC0CB',
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 20,
+        marginTop: 70, // Space between back arrow and title
+        marginBottom: 20, // Space between title and content
     },
     selectedContainer: {
         backgroundColor: '#2E004E',

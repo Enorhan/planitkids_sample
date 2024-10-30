@@ -2,28 +2,24 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { MaterialIcons } from '@expo/vector-icons';
 
-export default function WhatsToday() {
+export default function WhatsToday({ navigation }) {
     const activityOptions = ["Pyssel", "Utomhus", "Film", "Tema Arbete", "Bakning"];
-
-    // State to hold all activities
     const [activities, setActivities] = useState([
         { activityType: "Pyssel", fromTime: "", toTime: "", where: "", profilePictures: [null, null, null] }
     ]);
 
-    // Function to add a new activity template
     const addActivity = () => {
         setActivities([...activities, { activityType: "Pussel", fromTime: "", toTime: "", where: "", profilePictures: [null, null, null] }]);
     };
 
-    // Update a specific field for an activity
     const updateActivity = (index, field, value) => {
         const newActivities = [...activities];
         newActivities[index][field] = value;
         setActivities(newActivities);
     };
 
-    // Handle auto-formatting for time input
     const handleTimeChange = (text, index, field) => {
         const formatted = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
         if (formatted.length <= 2) {
@@ -33,7 +29,6 @@ export default function WhatsToday() {
         }
     };
 
-    // Handle profile selection for each activity
     const handleProfileSelect = (activityIndex, profileIndex) => {
         Alert.alert(
             "Assign Teacher",
@@ -55,11 +50,15 @@ export default function WhatsToday() {
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
+            </TouchableOpacity>
+
             <Text style={styles.title}>What's Today (Fritidspersonal)</Text>
 
             {activities.map((activity, index) => (
                 <View key={index} style={styles.activityContainer}>
-                    {/* Activity Dropdown */}
                     <Picker
                         selectedValue={activity.activityType}
                         style={[styles.picker, { color: '#FFC0CB' }]}
@@ -70,7 +69,6 @@ export default function WhatsToday() {
                         ))}
                     </Picker>
 
-                    {/* Where Input */}
                     <TextInput
                         style={styles.input}
                         placeholder="Where"
@@ -79,7 +77,6 @@ export default function WhatsToday() {
                         onChangeText={(text) => updateActivity(index, 'where', text)}
                     />
 
-                    {/* Time Input */}
                     <View style={styles.timeRow}>
                         <Text style={styles.label}>From</Text>
                         <TextInput
@@ -101,7 +98,6 @@ export default function WhatsToday() {
                         />
                     </View>
 
-                    {/* Activity Details */}
                     <TextInput
                         style={styles.detailsInput}
                         placeholder="Activity details/explanation"
@@ -109,7 +105,6 @@ export default function WhatsToday() {
                         multiline
                     />
 
-                    {/* Profile Pictures with Visible Placeholders */}
                     <View style={styles.profileIconsContainer}>
                         <Text style={styles.assignLabel}>Assigned Teachers:</Text>
                         <View style={styles.profileIcons}>
@@ -126,7 +121,6 @@ export default function WhatsToday() {
                 </View>
             ))}
 
-            {/* Add Activity Button */}
             <TouchableOpacity style={styles.addButton} onPress={addActivity}>
                 <Text style={styles.addButtonText}>+ Add Activity</Text>
             </TouchableOpacity>
@@ -141,11 +135,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#4B0082',
         alignItems: 'center',
     },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 16,
+    },
     title: {
         fontSize: 24,
         color: '#FFC0CB',
         fontWeight: 'bold',
-        marginBottom: 20,
+        marginTop: 70, // Space between arrow and title
+        marginBottom: 20, // Space between title and first activity
     },
     activityContainer: {
         backgroundColor: '#2E004E',

@@ -2,11 +2,34 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { MaterialIcons } from '@expo/vector-icons';
 
-export default function MyGroup({ navigation }) {
+// Sample data for colleagues and classes
+const colleagues = [
+    { email: "enes@northbyschool.com" },
+    { email: "sara@northbyschool.com" },
+    { email: "leo@northbyschool.com" },
+];
+
+// Extract the first name from email and format it
+const getGroupName = (email) => {
+    const name = email.split("@")[0];
+    return `${name.charAt(0).toUpperCase() + name.slice(1)}'s Group`;
+};
+
+export default function MyGroup() {
+    const [selectedColleague, setSelectedColleague] = useState("myGroup");
+
+    // Maintain separate selected student lists for each group
+    const [groupSelections, setGroupSelections] = useState({
+        myGroup: [],
+        enes: [],
+        sara: [],
+        leo: []
+    });
+
+    // Initial data for available classes and students
     const initialClassData = {
-        "F-klassen": ["Ali", "Sara", "Emma"],
+        "F Klassen": ["Ali", "Sara", "Emma"],
         "Åk 1": ["Hasan", "Lina", "Eli"],
         "Åk 2": ["Oscar", "Mia", "Nora"],
         "Åk 3": ["Leo", "Sofia", "Max"],
@@ -17,8 +40,23 @@ export default function MyGroup({ navigation }) {
     };
 
     const [classData, setClassData] = useState(initialClassData);
-    const [selectedStudents, setSelectedStudents] = useState([]);
     const [pendingSelection, setPendingSelection] = useState({});
+
+    // Calculate the students currently unavailable based on other group selections
+    const getUnavailableStudents = () => {
+        return Object.keys(groupSelections).reduce((acc, groupKey) => {
+            if (groupKey !== selectedColleague) {
+                acc.push(...groupSelections[groupKey].map((s) => s.name));
+            }
+            return acc;
+        }, []);
+    };
+
+    // Filter out unavailable students from the dropdown lists
+    const getAvailableStudents = (className) => {
+        const unavailableStudents = getUnavailableStudents();
+        return classData[className].filter((student) => !unavailableStudents.includes(student));
+    };
 
     const handleStudentSelect = (className, student) => {
         setPendingSelection({ ...pendingSelection, [className]: student });
@@ -26,19 +64,29 @@ export default function MyGroup({ navigation }) {
 
     const addStudent = (className) => {
         const student = pendingSelection[className];
-        setSelectedStudents([...selectedStudents, { name: student, class: className }]);
+        const updatedGroupSelections = {
+            ...groupSelections,
+            [selectedColleague]: [...groupSelections[selectedColleague], { name: student, class: className }]
+        };
+        setGroupSelections(updatedGroupSelections);
 
         setClassData({
             ...classData,
             [className]: classData[className].filter((s) => s !== student),
         });
 
+        // Clear pending selection
         setPendingSelection({ ...pendingSelection, [className]: null });
     };
 
     const removeStudent = (student) => {
         const { name, class: className } = student;
-        setSelectedStudents(selectedStudents.filter((s) => s.name !== name));
+        const updatedGroupSelections = {
+            ...groupSelections,
+            [selectedColleague]: groupSelections[selectedColleague].filter((s) => s.name !== name)
+        };
+        setGroupSelections(updatedGroupSelections);
+
         setClassData({
             ...classData,
             [className]: [...classData[className], name],
@@ -47,18 +95,34 @@ export default function MyGroup({ navigation }) {
 
     return (
         <View style={styles.container}>
-            {/* Back Button */}
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
-            </TouchableOpacity>
-
-            <Text style={styles.title}>My Group (Fritidspersonal)</Text>
+            {/* Title and Dropdown to Select Colleague's Group */}
+            <View style={styles.titleContainer}>
+                <Text style={styles.title}>
+                    {selectedColleague === "myGroup" ? "My Group" : getGroupName(selectedColleague)}
+                </Text>
+                <Picker
+                    selectedValue={selectedColleague}
+                    onValueChange={(value) => setSelectedColleague(value)}
+                    style={styles.picker}
+                    dropdownIconColor="#FFC0CB"
+                >
+                    <Picker.Item label="My Group" value="myGroup" color="#FFC0CB" />
+                    {colleagues.map((colleague) => (
+                        <Picker.Item
+                            label={getGroupName(colleague.email)}
+                            value={colleague.email.split("@")[0]} // Use first name as key
+                            key={colleague.email}
+                            color="#FFC0CB"
+                        />
+                    ))}
+                </Picker>
+            </View>
 
             {/* Selected Students Scrollable Box */}
             <View style={styles.selectedContainer}>
                 <Text style={styles.subTitle}>Selected Students</Text>
                 <ScrollView style={styles.selectedScroll}>
-                    {selectedStudents.map((student, index) => (
+                    {groupSelections[selectedColleague].map((student, index) => (
                         <View key={index} style={styles.studentItem}>
                             <Text style={styles.studentText}>{student.name} ({student.class})</Text>
                             <TouchableOpacity onPress={() => removeStudent(student)} style={styles.removeButton}>
@@ -80,7 +144,7 @@ export default function MyGroup({ navigation }) {
                             onValueChange={(student) => handleStudentSelect(className, student)}
                         >
                             <Picker.Item label={`Select a student from ${className}`} value={null} color="#FFC0CB" />
-                            {classData[className].map((student) => (
+                            {getAvailableStudents(className).map((student) => (
                                 <Picker.Item label={student} value={student} key={student} color="#FFC0CB" />
                             ))}
                         </Picker>
@@ -107,18 +171,22 @@ const styles = StyleSheet.create({
         backgroundColor: '#4B0082',
         padding: 16,
     },
-    backButton: {
-        position: 'absolute',
-        top: 40,
-        left: 16,
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
     },
     title: {
         fontSize: 24,
         color: '#FFC0CB',
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 70, // Space between back arrow and title
-        marginBottom: 20, // Space between title and content
+    },
+    picker: {
+        width: 180,
+        color: '#FFC0CB',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 8,
     },
     selectedContainer: {
         backgroundColor: '#2E004E',
@@ -167,10 +235,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 5,
-    },
-    picker: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 8,
     },
     addButton: {
         backgroundColor: '#FFC0CB',

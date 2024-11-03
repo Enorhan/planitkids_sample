@@ -14,6 +14,11 @@ export default function WhatsToday({ navigation }) {
         setActivities([...activities, { activityType: "Pussel", fromTime: "", toTime: "", where: "", profilePictures: [null, null, null] }]);
     };
 
+    const removeActivity = (index) => {
+        const updatedActivities = activities.filter((_, i) => i !== index);
+        setActivities(updatedActivities);
+    };
+
     const updateActivity = (index, field, value) => {
         const newActivities = [...activities];
         newActivities[index][field] = value;
@@ -118,6 +123,14 @@ export default function WhatsToday({ navigation }) {
                             ))}
                         </View>
                     </View>
+
+                    {/* Remove Activity Button */}
+                    <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeActivity(index)}
+                    >
+                        <Text style={styles.removeButtonText}>Remove Activity</Text>
+                    </TouchableOpacity>
                 </View>
             ))}
 
@@ -212,6 +225,18 @@ const styles = StyleSheet.create({
         marginRight: 10,
         borderColor: '#FFC0CB',
         borderWidth: 1,
+    },
+    removeButton: {
+        backgroundColor: '#FF8C8C',
+        padding: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    removeButtonText: {
+        color: '#4B0082',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
     addButton: {
         backgroundColor: '#FFC0CB',

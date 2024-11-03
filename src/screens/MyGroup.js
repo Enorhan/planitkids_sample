@@ -1,7 +1,8 @@
-// src/screens/MyGroup.js
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 // Sample data for colleagues and classes
 const colleagues = [
@@ -17,6 +18,7 @@ const getGroupName = (email) => {
 };
 
 export default function MyGroup() {
+    const navigation = useNavigation();
     const [selectedColleague, setSelectedColleague] = useState("myGroup");
 
     // Maintain separate selected student lists for each group
@@ -42,7 +44,6 @@ export default function MyGroup() {
     const [classData, setClassData] = useState(initialClassData);
     const [pendingSelection, setPendingSelection] = useState({});
 
-    // Calculate the students currently unavailable based on other group selections
     const getUnavailableStudents = () => {
         return Object.keys(groupSelections).reduce((acc, groupKey) => {
             if (groupKey !== selectedColleague) {
@@ -52,7 +53,6 @@ export default function MyGroup() {
         }, []);
     };
 
-    // Filter out unavailable students from the dropdown lists
     const getAvailableStudents = (className) => {
         const unavailableStudents = getUnavailableStudents();
         return classData[className].filter((student) => !unavailableStudents.includes(student));
@@ -75,7 +75,6 @@ export default function MyGroup() {
             [className]: classData[className].filter((s) => s !== student),
         });
 
-        // Clear pending selection
         setPendingSelection({ ...pendingSelection, [className]: null });
     };
 
@@ -95,8 +94,13 @@ export default function MyGroup() {
 
     return (
         <View style={styles.container}>
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
+            </TouchableOpacity>
+
             {/* Title and Dropdown to Select Colleague's Group */}
-            <View style={styles.titleContainer}>
+            <View style={styles.header}>
                 <Text style={styles.title}>
                     {selectedColleague === "myGroup" ? "My Group" : getGroupName(selectedColleague)}
                 </Text>
@@ -110,7 +114,7 @@ export default function MyGroup() {
                     {colleagues.map((colleague) => (
                         <Picker.Item
                             label={getGroupName(colleague.email)}
-                            value={colleague.email.split("@")[0]} // Use first name as key
+                            value={colleague.email.split("@")[0]}
                             key={colleague.email}
                             color="#FFC0CB"
                         />
@@ -118,7 +122,7 @@ export default function MyGroup() {
                 </Picker>
             </View>
 
-            {/* Selected Students Scrollable Box */}
+            {/* Selected Students */}
             <View style={styles.selectedContainer}>
                 <Text style={styles.subTitle}>Selected Students</Text>
                 <ScrollView style={styles.selectedScroll}>
@@ -171,19 +175,25 @@ const styles = StyleSheet.create({
         backgroundColor: '#4B0082',
         padding: 16,
     },
-    titleContainer: {
-        flexDirection: 'row',
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 16,
+        zIndex: 1,  // Ensure back button remains accessible
+    },
+    header: {
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 10,
+        paddingVertical: 20,
+        paddingHorizontal: 10,
     },
     title: {
         fontSize: 24,
         color: '#FFC0CB',
         fontWeight: 'bold',
+        marginBottom: 10,
     },
     picker: {
-        width: 180,
+        width: '90%',
         color: '#FFC0CB',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderRadius: 8,
@@ -192,7 +202,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2E004E',
         borderRadius: 10,
         padding: 10,
-        marginBottom: 20,
+        marginVertical: 15,
     },
     subTitle: {
         fontSize: 18,

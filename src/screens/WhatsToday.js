@@ -57,8 +57,7 @@ export default function WhatsToday({ navigation }) {
     const attachPhoto = (index) => {
         const randomImageUrl = `https://picsum.photos/200?random=${Math.floor(Math.random() * 1000)}`;
         const newActivities = [...activities];
-        const currentPhotos = newActivities[index].photos || [];
-        newActivities[index].photos = [...currentPhotos, randomImageUrl];
+        newActivities[index].photos.push(randomImageUrl);
         setActivities(newActivities);
     };
 
@@ -163,15 +162,17 @@ export default function WhatsToday({ navigation }) {
                                 onChangeText={(text) => updateActivity(selectedActivityIndex, 'description', text)}
                             />
 
-                            {/* Display the attached photos if they exist */}
-                            {activities[selectedActivityIndex].photos && activities[selectedActivityIndex].photos.map((photo, i) => (
-                                <View key={i} style={styles.photoContainer}>
-                                    <Image source={{ uri: photo }} style={styles.attachedPhoto} />
-                                    <TouchableOpacity style={styles.removePhotoButton} onPress={() => removePhoto(selectedActivityIndex, i)}>
-                                        <Text style={styles.removePhotoButtonText}>Remove Photo</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
+                            {/* Scrollable view for attached photos */}
+                            <ScrollView horizontal contentContainerStyle={styles.photosContainer}>
+                                {activities[selectedActivityIndex].photos.map((photo, photoIndex) => (
+                                    <View key={photoIndex} style={styles.photoWrapper}>
+                                        <Image source={{ uri: photo }} style={styles.attachedPhoto} />
+                                        <TouchableOpacity style={styles.removePhotoButton} onPress={() => removePhoto(selectedActivityIndex, photoIndex)}>
+                                            <MaterialIcons name="cancel" size={24} color="#FF8C8C" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </ScrollView>
 
                             <TouchableOpacity style={styles.attachPhotoButton} onPress={() => attachPhoto(selectedActivityIndex)}>
                                 <Text style={styles.attachPhotoButtonText}>Attach Photo</Text>
@@ -327,19 +328,31 @@ const styles = StyleSheet.create({
         color: '#FFC0CB',
         borderRadius: 8,
         padding: 10,
-        height: 200,
+        height: 100,
         textAlignVertical: 'top',
         marginBottom: 10,
     },
+    photosContainer: {
+        flexDirection: 'row',
+        marginBottom: 10,
+    },
+    photoWrapper: {
+        position: 'relative',
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
     attachedPhoto: {
-        width: '100%',
+        width: 150,
         height: 150,
-        marginTop: 10,
         borderRadius: 8,
     },
-    photoContainer: {
-        alignItems: 'center',
-        marginBottom: 10,
+    removePhotoButton: {
+        position: 'absolute',
+        top: -0,
+        left: -5,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        borderRadius: 15,
+        padding: 2,
     },
     attachPhotoButton: {
         backgroundColor: '#FFC0CB',
@@ -352,17 +365,6 @@ const styles = StyleSheet.create({
         color: '#4B0082',
         fontWeight: 'bold',
         fontSize: 16,
-    },
-    removePhotoButton: {
-        backgroundColor: '#FF8C8C',
-        padding: 5,
-        borderRadius: 5,
-        marginTop: 5,
-    },
-    removePhotoButtonText: {
-        color: '#4B0082',
-        fontWeight: 'bold',
-        fontSize: 14,
     },
     closeButton: {
         backgroundColor: '#FF8C8C',

@@ -1,9 +1,9 @@
 // src/screens/TrackColleaguesGroups.js
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function TrackColleaguesGroups({ navigation }) { // Use navigation prop directly
+export default function TrackColleaguesGroups({ navigation }) {
     const [expandedGroup, setExpandedGroup] = useState(null);
 
     // Sample data of colleagues with student details
@@ -47,23 +47,26 @@ export default function TrackColleaguesGroups({ navigation }) { // Use navigatio
         <View style={styles.container}>
             {/* Back Button */}
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
+                <MaterialIcons name="arrow-back" size={30} color="#FFC0CB" />
             </TouchableOpacity>
 
             <Text style={styles.title}>Colleagues' Groups</Text>
 
-            {/* List of Groups */}
-            <ScrollView contentContainerStyle={styles.groupList}>
-                {colleagues.map((colleague, index) => (
+            {/* List of Groups using FlatList */}
+            <FlatList
+                data={colleagues}
+                keyExtractor={(item, index) => index.toString()}
+                contentContainerStyle={styles.groupList}
+                renderItem={({ item, index }) => (
                     <View key={index} style={styles.groupContainer}>
                         <TouchableOpacity onPress={() => toggleGroup(index)} style={styles.groupButton}>
-                            <Text style={styles.groupText}>{getGroupName(colleague.email)}</Text>
+                            <Text style={styles.groupText}>{getGroupName(item.email)}</Text>
                         </TouchableOpacity>
 
                         {/* Show group details if expanded */}
                         {expandedGroup === index && (
                             <View style={styles.detailsContainer}>
-                                {colleague.students.map((student, i) => (
+                                {item.students.map((student, i) => (
                                     <Text key={i} style={styles.memberText}>
                                         {student.firstName} {student.lastName} - {student.class}
                                     </Text>
@@ -71,8 +74,8 @@ export default function TrackColleaguesGroups({ navigation }) { // Use navigatio
                             </View>
                         )}
                     </View>
-                ))}
-            </ScrollView>
+                )}
+            />
         </View>
     );
 }
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
         left: 16,
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         color: '#FFC0CB',
         fontWeight: 'bold',
         marginBottom: 20,
@@ -101,10 +104,10 @@ const styles = StyleSheet.create({
     },
     groupContainer: {
         backgroundColor: '#FFC0CB',
-        padding: 15,
-        borderRadius: 8,
+        padding: 20,
+        borderRadius: 10,
         marginVertical: 10,
-        width: '100%',
+        width: '90%',
         alignItems: 'center',
     },
     groupButton: {
@@ -114,7 +117,7 @@ const styles = StyleSheet.create({
     groupText: {
         color: '#4B0082',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 20,
     },
     detailsContainer: {
         marginTop: 10,
@@ -123,7 +126,7 @@ const styles = StyleSheet.create({
     },
     memberText: {
         color: '#4B0082',
-        fontSize: 14,
+        fontSize: 18,
         textAlign: 'left',
     },
 });

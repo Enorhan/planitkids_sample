@@ -12,6 +12,8 @@ import WhatsToday from '../screens/WhatsToday';
 import MyGroup from '../screens/MyGroup';
 import TrackColleaguesGroups from '../screens/TrackColleaguesGroups';
 import DailyActivities from '../screens/DailyActivities';
+import Agenda from "../screens/Agenda";
+import GroupTrack from "../screens/GroupTrack";
 
 const Stack = createStackNavigator();
 
@@ -23,10 +25,12 @@ export default function AppNavigator() {
                 <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
                 <Stack.Screen name="FritidsledareDashboard" component={FritidsledareDashboard} />
                 <Stack.Screen name="FritidspersonalDashboard" component={FritidspersonalDashboard} />
+                <Stack.Screen name="Agenda" component={Agenda} />
                 <Stack.Screen name="WhatsToday" component={WhatsToday} />
                 <Stack.Screen name="MyGroup" component={MyGroup} />
                 <Stack.Screen name="TrackColleaguesGroups" component={TrackColleaguesGroups} />
                 <Stack.Screen name="DailyActivities" component={DailyActivities} />
+                <Stack.Screen name="GroupTrack" component={GroupTrack} />
             </Stack.Navigator>
         </NavigationContainer>
     );

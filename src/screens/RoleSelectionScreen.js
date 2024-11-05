@@ -20,7 +20,10 @@ export default function RoleSelectionScreen({ navigation }) {
                 activeOpacity={0.8}>
                 <Text style={styles.buttonText}>Fritidspersonal</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => {navigation.navigate('Agenda')}}
+                activeOpacity={0.8}>
                 <Text style={styles.buttonText}>Vikarie</Text>
             </TouchableOpacity>
         </View>

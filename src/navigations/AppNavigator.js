@@ -14,7 +14,6 @@ import TrackColleaguesGroups from '../screens/TrackColleaguesGroups';
 import DailyActivities from '../screens/DailyActivities';
 import Agenda from "../screens/Agenda";
 import GroupTrack from "../screens/GroupTrack";
-import CalendarPage from "../screens/CalendarPage";
 
 const Stack = createStackNavigator();
 
@@ -32,7 +31,6 @@ export default function AppNavigator() {
                 <Stack.Screen name="TrackColleaguesGroups" component={TrackColleaguesGroups} />
                 <Stack.Screen name="DailyActivities" component={DailyActivities} />
                 <Stack.Screen name="GroupTrack" component={GroupTrack} />
-                <Stack.Screen name="CalendarPage" component={CalendarPage} />
             </Stack.Navigator>
         </NavigationContainer>
     );

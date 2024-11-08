@@ -66,7 +66,7 @@ export default function FritidsledareDashboard() {
                 onPress={() => navigation.navigate('WhatsToday')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>What's Today</Text>
+                <Text style={styles.buttonText}>Activity Planner</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -74,7 +74,7 @@ export default function FritidsledareDashboard() {
                 onPress={() => navigation.navigate('MyGroup')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>My Group</Text>
+                <Text style={styles.buttonText}>Edit Groups</Text>
             </TouchableOpacity>
 
             {/* New Button for Tracking Colleagues' Groups */}
@@ -83,7 +83,7 @@ export default function FritidsledareDashboard() {
                 onPress={() => navigation.navigate('TrackColleaguesGroups')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>Track Colleagues' Groups</Text>
+                <Text style={styles.buttonText}>All Groups</Text>
             </TouchableOpacity>
         </View>
     );

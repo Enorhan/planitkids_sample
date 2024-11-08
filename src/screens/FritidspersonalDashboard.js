@@ -66,7 +66,7 @@ export default function FritidspersonalDashboard() {
                 onPress={() => navigation.navigate('DailyActivities')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>Daily Activities</Text>
+                <Text style={styles.buttonText}>Today's Activities</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -74,7 +74,7 @@ export default function FritidspersonalDashboard() {
                 onPress={() => navigation.navigate('MyGroup')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>My Group</Text>
+                <Text style={styles.buttonText}>Edit Groups</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -82,7 +82,7 @@ export default function FritidspersonalDashboard() {
                 onPress={() => navigation.navigate('TrackColleaguesGroups')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>Track Colleagues' Groups</Text>
+                <Text style={styles.buttonText}>All Groups</Text>
             </TouchableOpacity>
         </View>
     );

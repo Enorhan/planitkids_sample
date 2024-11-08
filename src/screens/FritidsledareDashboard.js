@@ -1,18 +1,18 @@
 // src/screens/FritidsledareDashboard.js
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useOccasions } from '../context/OccasionsContext';
 
 export default function FritidsledareDashboard() {
     const navigation = useNavigation();
     const [menuVisible, setMenuVisible] = useState(false);
-    const { occasions } = useOccasions(); // Use occasions from context
 
+    // Handle opening the custom menu
     const openMenu = () => setMenuVisible(true);
     const closeMenu = () => setMenuVisible(false);
 
+    // Menu options functionality
     const handleMenuOption = (option) => {
         closeMenu();
         if (option === "Logout") {
@@ -24,10 +24,12 @@ export default function FritidsledareDashboard() {
 
     return (
         <View style={styles.container}>
+            {/* Three-dotted Menu Button */}
             <TouchableOpacity style={styles.menuButton} onPress={openMenu}>
                 <MaterialIcons name="more-vert" size={28} color="#FFC0CB" />
             </TouchableOpacity>
 
+            {/* Custom Modal for Menu Options */}
             <Modal
                 transparent={true}
                 animationType="fade"
@@ -58,12 +60,13 @@ export default function FritidsledareDashboard() {
                 </View>
             </Modal>
 
+            {/* Navigation Options */}
             <TouchableOpacity
                 style={styles.optionButton}
                 onPress={() => navigation.navigate('WhatsToday')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>Activity Planner</Text>
+                <Text style={styles.buttonText}>What's Today</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -71,23 +74,16 @@ export default function FritidsledareDashboard() {
                 onPress={() => navigation.navigate('MyGroup')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>Set Groups</Text>
+                <Text style={styles.buttonText}>My Group</Text>
             </TouchableOpacity>
 
+            {/* New Button for Tracking Colleagues' Groups */}
             <TouchableOpacity
                 style={styles.optionButton}
                 onPress={() => navigation.navigate('TrackColleaguesGroups')}
                 activeOpacity={0.8}
             >
-                <Text style={styles.buttonText}>All Groups</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.optionButton}
-                onPress={() => navigation.navigate('CalendarPage')}
-                activeOpacity={0.8}
-            >
-                <Text style={styles.buttonText}>Calendar</Text>
+                <Text style={styles.buttonText}>Track Colleagues' Groups</Text>
             </TouchableOpacity>
         </View>
     );
@@ -119,6 +115,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
+    // Modal styles
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',

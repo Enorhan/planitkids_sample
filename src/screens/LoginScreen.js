@@ -1,14 +1,51 @@
 // src/screens/LoginScreen.js
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { supabase } from '../../supabaseClient'; // Import your Supabase client
 
 export default function LoginScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = () => {
-        navigation.navigate('RoleSelection');
+    // Email validation function
+    const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
+
+    const handleLogin = async () => {
+        try {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (authError) {
+                Alert.alert('Login Failed', authError.message);
+                return;
+            }
+
+            console.log('Authenticated User:', authData.user);
+
+            // Debugging step: Fetch user details and log the query result
+            const { data: userDetails, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', authData.user.id)
+                .single();
+
+            console.log('Query Result:', { data: userDetails, error: userError });
+
+            if (userError || !userDetails) {
+                Alert.alert('Error', 'Unable to fetch user details.');
+                return;
+            }
+
+            Alert.alert('Welcome', `Logged in as ${userDetails.email}`);
+            navigation.navigate('RoleSelection', { user: userDetails });
+        } catch (err) {
+            Alert.alert('Unexpected Error', 'Something went wrong. Please try again.');
+            console.error(err);
+        }
     };
 
     return (
@@ -23,6 +60,8 @@ export default function LoginScreen({ navigation }) {
                 onChangeText={setEmail}
                 style={styles.input}
                 placeholderTextColor="pink"
+                autoCapitalize="none"
+                keyboardType="email-address"
             />
             <TextInput
                 placeholder="Password"
@@ -32,8 +71,13 @@ export default function LoginScreen({ navigation }) {
                 style={styles.input}
                 placeholderTextColor="pink"
             />
-            <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
-                <Text style={styles.buttonText}>Login</Text>
+            <TouchableOpacity
+                style={[styles.button, loading && { opacity: 0.6 }]}
+                onPress={handleLogin}
+                activeOpacity={0.8}
+                disabled={loading}
+            >
+                <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
             </TouchableOpacity>
         </View>
     );

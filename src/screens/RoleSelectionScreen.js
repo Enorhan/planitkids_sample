@@ -1,31 +1,56 @@
 // src/screens/RoleSelectionScreen.js
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function RoleSelectionScreen({ navigation }) {
+export default function RoleSelectionScreen({ navigation, route }) {
+    const { user } = route.params; // Receive user data from LoginScreen
+
+    // Automatically redirect Vikarie users to Agenda
+    useEffect(() => {
+        if (user.role === 'vikarie') {
+            navigation.replace('Agenda', { user });
+        }
+    }, [user, navigation]);
+
+    const navigateToDashboard = (destination) => {
+        navigation.navigate(destination, { user });
+    };
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Select Your Role</Text>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => navigation.navigate('FritidsledareDashboard')}
-                activeOpacity={0.8}
-            >
-                <Text style={styles.buttonText}>Fritidsledare</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => navigation.navigate('FritidspersonalDashboard')}
-                activeOpacity={0.8}>
-                <Text style={styles.buttonText}>Fritidspersonal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => {navigation.navigate('Agenda')}}
-                activeOpacity={0.8}>
-                <Text style={styles.buttonText}>Vikarie</Text>
-            </TouchableOpacity>
+            {user.role !== 'vikarie' && (
+                <>
+                    <Text style={styles.title}>Select Your Role</Text>
+                    {user.role === 'fritidsledare' && (
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => navigateToDashboard('FritidsledareDashboard')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.buttonText}>Fritidsledare</Text>
+                        </TouchableOpacity>
+                    )}
+                    {(user.role === 'fritidsledare' || user.role === 'fritidspersonal') && (
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => navigateToDashboard('FritidspersonalDashboard')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.buttonText}>Fritidspersonal</Text>
+                        </TouchableOpacity>
+                    )}
+                    {(user.role === 'fritidsledare' || user.role === 'fritidspersonal') && (
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => navigateToDashboard('Agenda')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.buttonText}>Vikarie</Text>
+                        </TouchableOpacity>
+                    )}
+                </>
+            )}
         </View>
     );
 }

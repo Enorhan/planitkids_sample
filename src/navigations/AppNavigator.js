@@ -14,6 +14,8 @@ import TrackColleaguesGroups from '../screens/TrackColleaguesGroups';
 import DailyActivities from '../screens/DailyActivities';
 import Agenda from "../screens/Agenda";
 import GroupTrack from "../screens/GroupTrack";
+import BusDriverDashboard from '../screens/BusDriverDashboard';
+import BusDetails from "../screens/BusDetails"; // Example // New import
 
 const Stack = createStackNavigator();
 
@@ -26,6 +28,8 @@ export default function AppNavigator() {
                 <Stack.Screen name="FritidsledareDashboard" component={FritidsledareDashboard} />
                 <Stack.Screen name="FritidspersonalDashboard" component={FritidspersonalDashboard} />
                 <Stack.Screen name="Agenda" component={Agenda} />
+                <Stack.Screen name="BusDriverDashboard" component={BusDriverDashboard} />
+                <Stack.Screen name="BusDetails" component={BusDetails} />
                 <Stack.Screen name="WhatsToday" component={WhatsToday} />
                 <Stack.Screen name="MyGroup" component={MyGroup} />
                 <Stack.Screen name="TrackColleaguesGroups" component={TrackColleaguesGroups} />

@@ -13,6 +13,13 @@ export default function LoginScreen({ navigation }) {
     const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
     const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please enter both email and password.');
+            return;
+        }
+
+        setLoading(true);
+
         try {
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email,
@@ -24,27 +31,31 @@ export default function LoginScreen({ navigation }) {
                 return;
             }
 
-            console.log('Authenticated User:', authData.user);
-
-            // Debugging step: Fetch user details and log the query result
+            // Fetch user details (including role)
             const { data: userDetails, error: userError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', authData.user.id)
                 .single();
 
-            console.log('Query Result:', { data: userDetails, error: userError });
-
             if (userError || !userDetails) {
                 Alert.alert('Error', 'Unable to fetch user details.');
                 return;
             }
 
-            Alert.alert('Welcome', `Logged in as ${userDetails.email}`);
-            navigation.navigate('RoleSelection', { user: userDetails });
+            // Navigate based on role
+            if (userDetails.role === 'bus_driver') {
+                navigation.replace('BusDriverDashboard', { user: userDetails });
+            } else if (userDetails.role === 'vikarie') {
+                navigation.replace('Agenda', { user: userDetails });
+            } else {
+                navigation.replace('RoleSelection', { user: userDetails });
+            }
         } catch (err) {
+            console.error('Unexpected Error:', err);
             Alert.alert('Unexpected Error', 'Something went wrong. Please try again.');
-            console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 

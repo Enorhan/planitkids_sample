@@ -7,12 +7,13 @@ export default function BusDriverDashboard({ route, navigation }) {
     const [loading, setLoading] = useState(false);
 
     const { user } = route.params || {};
+    const driverId = user?.id; // Use `user.id` passed from route.params
     const schoolId = user?.school_id;
 
     const fetchBuses = async () => {
-        if (!schoolId) {
-            console.error('Invalid schoolId:', schoolId);
-            Alert.alert('Error', 'Invalid school information. Please contact support.');
+        if (!driverId) {
+            console.error('Driver ID not found in route params.');
+            Alert.alert('Error', 'Invalid user session. Please log in again.');
             setBuses([]);
             setLoading(false);
             return;
@@ -21,19 +22,19 @@ export default function BusDriverDashboard({ route, navigation }) {
         setLoading(true);
 
         try {
-            console.log('Fetching buses for School ID:', schoolId);
+            console.log('Fetching buses for Driver ID:', driverId);
 
             const { data: busesData, error } = await supabase
                 .from('buses')
                 .select('id, name')
-                .eq('school_id', schoolId); // Ensure only school-specific buses are fetched
+                .eq('driver_id', driverId); // Filter buses by driver ID
 
             if (error) {
                 console.error('Supabase Fetch Error:', error);
                 Alert.alert('Error', 'Unable to fetch bus data. Please try again later.');
                 setBuses([]);
             } else if (!busesData || busesData.length === 0) {
-                console.log('No buses found for School ID:', schoolId);
+                console.log('No buses found for Driver ID:', driverId);
                 setBuses([]);
             } else {
                 console.log('Fetched Buses Data:', busesData);
@@ -49,7 +50,7 @@ export default function BusDriverDashboard({ route, navigation }) {
 
     useEffect(() => {
         fetchBuses();
-    }, [schoolId]);
+    }, [driverId]);
 
     const handleBusAction = (bus) => {
         navigation.navigate('BusDetails', { bus });
@@ -62,7 +63,7 @@ export default function BusDriverDashboard({ route, navigation }) {
             {loading ? (
                 <Text style={styles.loadingText}>Loading buses...</Text>
             ) : buses.length === 0 ? (
-                <Text style={styles.noDataText}>No buses available for your school.</Text>
+                <Text style={styles.noDataText}>No buses assigned to you.</Text>
             ) : (
                 <FlatList
                     contentContainerStyle={styles.scrollContainer}

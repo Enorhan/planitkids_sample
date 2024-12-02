@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal, Pressable } from 'react-native';
 import { supabase } from '../../supabaseClient';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function BusDetails({ route }) {
+export default function BusDetails({ route, navigation }) {
     const { bus } = route.params;
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [selectedStudent, setSelectedStudent] = useState(null); // For modal
+    const [selectedStudent, setSelectedStudent] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
 
     const fetchStudents = async () => {
@@ -15,8 +16,8 @@ export default function BusDetails({ route }) {
         try {
             const { data: studentData, error } = await supabase
                 .from('students')
-                .select('id, name') // Removed `current_status` if it doesn't exist
-                .eq('bus_id', bus.id); // Fetch students assigned to this bus
+                .select('id, name') // Keep the original fetching logic
+                .eq('bus_id', bus.id);
 
             if (error) {
                 console.error('Error fetching students:', error);
@@ -33,7 +34,7 @@ export default function BusDetails({ route }) {
     };
 
     useEffect(() => {
-        fetchStudents();
+        fetchStudents(); // Fetch data when the component mounts
     }, [bus.id]);
 
     const sendNotification = async (studentId, status) => {
@@ -58,7 +59,7 @@ export default function BusDetails({ route }) {
                 Alert.alert('Error', 'Failed to send notification.');
             } else {
                 Alert.alert('Success', `Notification sent: ${messageMap[status]}`);
-                fetchStudents(); // Refresh the list to show updated status
+                fetchStudents(); // Refresh the list to show updated data
             }
         } catch (err) {
             console.error('Unexpected Error:', err);
@@ -84,6 +85,12 @@ export default function BusDetails({ route }) {
 
     return (
         <View style={styles.container}>
+            {/* Custom Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={24} color="#FFC0CB" />
+                <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+
             <Text style={styles.header}>{bus.name} - Students</Text>
             {loading ? (
                 <Text style={styles.loadingText}>Loading students...</Text>
@@ -96,7 +103,6 @@ export default function BusDetails({ route }) {
                     renderItem={({ item }) => (
                         <View style={styles.card}>
                             <Text style={styles.studentName}>{item.name}</Text>
-                            <Text style={styles.statusText}>Status: {item.current_status || 'No status'}</Text>
                             <View style={styles.actionButtons}>
                                 <TouchableOpacity
                                     style={styles.quickActionButton}
@@ -151,12 +157,22 @@ const styles = StyleSheet.create({
         backgroundColor: '#4B0082',
         padding: 20,
     },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    backText: {
+        fontSize: 16,
+        color: '#FFC0CB',
+        marginLeft: 5,
+    },
     header: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
         color: '#FFC0CB',
         textAlign: 'center',
+        marginBottom: 20,
     },
     loadingText: {
         fontSize: 16,
@@ -181,12 +197,6 @@ const styles = StyleSheet.create({
         color: '#FFC0CB',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    statusText: {
-        fontSize: 14,
-        color: '#FFC0CB',
-        textAlign: 'center',
-        marginTop: 5,
     },
     actionButtons: {
         flexDirection: 'row',

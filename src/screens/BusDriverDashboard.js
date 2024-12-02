@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { supabase } from '../../supabaseClient';
+import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
 
 export default function BusDriverDashboard({ route, navigation }) {
     const [buses, setBuses] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const { user } = route.params || {};
-    const driverId = user?.id; // Use `user.id` passed from route.params
+    const driverId = user?.id;
     const schoolId = user?.school_id;
 
     const fetchBuses = async () => {
@@ -27,7 +28,7 @@ export default function BusDriverDashboard({ route, navigation }) {
             const { data: busesData, error } = await supabase
                 .from('buses')
                 .select('id, name')
-                .eq('driver_id', driverId); // Filter buses by driver ID
+                .eq('driver_id', driverId);
 
             if (error) {
                 console.error('Supabase Fetch Error:', error);
@@ -48,6 +49,16 @@ export default function BusDriverDashboard({ route, navigation }) {
         }
     };
 
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Logout Error:', error.message);
+            Alert.alert('Error', 'Failed to log out. Please try again.');
+        } else {
+            navigation.replace('Login'); // Redirect to login page
+        }
+    };
+
     useEffect(() => {
         fetchBuses();
     }, [driverId]);
@@ -58,7 +69,19 @@ export default function BusDriverDashboard({ route, navigation }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome, Bus Driver!</Text>
+            <View style={styles.header}>
+                <Menu>
+                    <MenuTrigger style={styles.menuTrigger}>
+                        <Text style={styles.menuText}>⋮</Text>
+                    </MenuTrigger>
+                    <MenuOptions>
+                        <MenuOption onSelect={handleLogout}>
+                            <Text style={styles.menuOptionText}>Logout</Text>
+                        </MenuOption>
+                    </MenuOptions>
+                </Menu>
+            </View>
+            <Text style={styles.title}>Welcome, {user?.first_name}!</Text>
             <Text style={styles.subHeader}>Select Your Bus:</Text>
             {loading ? (
                 <Text style={styles.loadingText}>Loading buses...</Text>
@@ -87,6 +110,25 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#4B0082',
+    },
+    header: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        zIndex: 1,
+    },
+    menuTrigger: {
+        padding: 10,
+    },
+    menuText: {
+        fontSize: 24,
+        color: '#FFC0CB',
+        fontWeight: 'bold',
+    },
+    menuOptionText: {
+        fontSize: 16,
+        color: '#000',
+        padding: 10,
     },
     title: {
         fontSize: 24,

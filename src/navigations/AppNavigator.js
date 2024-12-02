@@ -1,7 +1,9 @@
-// src/Navigations/AppNavigator.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+
+// Import MenuProvider from react-native-popup-menu
+import { MenuProvider } from 'react-native-popup-menu';
 
 // Import your screens
 import LoginScreen from '../screens/LoginScreen';
@@ -21,21 +23,24 @@ const Stack = createStackNavigator();
 
 export default function AppNavigator() {
     return (
-        <NavigationContainer>
-            <Stack.Navigator initialRouteName="Login">
-                <Stack.Screen name="Login" component={LoginScreen} />
-                <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
-                <Stack.Screen name="FritidsledareDashboard" component={FritidsledareDashboard} />
-                <Stack.Screen name="FritidspersonalDashboard" component={FritidspersonalDashboard} />
-                <Stack.Screen name="Agenda" component={Agenda} />
-                <Stack.Screen name="BusDriverDashboard" component={BusDriverDashboard} />
-                <Stack.Screen name="BusDetails" component={BusDetails} />
-                <Stack.Screen name="WhatsToday" component={WhatsToday} />
-                <Stack.Screen name="MyGroup" component={MyGroup} />
-                <Stack.Screen name="TrackColleaguesGroups" component={TrackColleaguesGroups} />
-                <Stack.Screen name="DailyActivities" component={DailyActivities} />
-                <Stack.Screen name="GroupTrack" component={GroupTrack} />
-            </Stack.Navigator>
-        </NavigationContainer>
+        // Wrap the navigation container with MenuProvider
+        <MenuProvider>
+            <NavigationContainer>
+                <Stack.Navigator initialRouteName="Login">
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+                    <Stack.Screen name="FritidsledareDashboard" component={FritidsledareDashboard} />
+                    <Stack.Screen name="FritidspersonalDashboard" component={FritidspersonalDashboard} />
+                    <Stack.Screen name="Agenda" component={Agenda} />
+                    <Stack.Screen name="BusDriverDashboard" component={BusDriverDashboard} />
+                    <Stack.Screen name="BusDetails" component={BusDetails} />
+                    <Stack.Screen name="WhatsToday" component={WhatsToday} />
+                    <Stack.Screen name="MyGroup" component={MyGroup} />
+                    <Stack.Screen name="TrackColleaguesGroups" component={TrackColleaguesGroups} />
+                    <Stack.Screen name="DailyActivities" component={DailyActivities} />
+                    <Stack.Screen name="GroupTrack" component={GroupTrack} />
+                </Stack.Navigator>
+            </NavigationContainer>
+        </MenuProvider>
     );
 }

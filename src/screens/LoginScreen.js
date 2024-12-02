@@ -1,16 +1,11 @@
-// src/screens/LoginScreen.js
-
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native';
 import { supabase } from '../../supabaseClient'; // Import your Supabase client
 
 export default function LoginScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    // Email validation function
-    const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -59,6 +54,21 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
+    const openWebsite = async () => {
+        const url = 'https://planitkidsapp.com';
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                Alert.alert('Error', `Cannot open this URL: ${url}`);
+            }
+        } catch (err) {
+            console.error('Failed to open website:', err);
+            Alert.alert('Error', 'Something went wrong while opening the website.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.logoContainer}>
@@ -89,6 +99,10 @@ export default function LoginScreen({ navigation }) {
                 disabled={loading}
             >
                 <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+            </TouchableOpacity>
+            {/* Add Website Button */}
+            <TouchableOpacity style={styles.websiteButton} onPress={openWebsite} activeOpacity={0.8}>
+                <Text style={styles.websiteButtonText}>Visit PlanIt Kids Website</Text>
             </TouchableOpacity>
         </View>
     );
@@ -143,5 +157,18 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         fontFamily: 'Poppins_600SemiBold',
+    },
+    websiteButton: {
+        marginTop: 15,
+        backgroundColor: '#FFA500',
+        paddingVertical: 15,
+        borderRadius: 10,
+        width: '80%',
+        alignItems: 'center',
+    },
+    websiteButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });

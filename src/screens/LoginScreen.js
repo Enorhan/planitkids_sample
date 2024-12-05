@@ -43,6 +43,8 @@ export default function LoginScreen({ navigation }) {
                 navigation.replace('BusDriverDashboard', { user: userDetails });
             } else if (userDetails.role === 'vikarie') {
                 navigation.replace('Agenda', { user: userDetails });
+            } else if (userDetails.role === 'admin') {
+                navigation.replace('AdminDashboard', { user: userDetails });
             } else {
                 navigation.replace('RoleSelection', { user: userDetails });
             }

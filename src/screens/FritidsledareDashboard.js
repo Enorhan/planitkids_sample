@@ -1,24 +1,57 @@
-// src/screens/FritidsledareDashboard.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { supabase } from '../../supabaseClient';
 
 export default function FritidsledareDashboard() {
     const navigation = useNavigation();
     const [menuVisible, setMenuVisible] = useState(false);
+    const [role, setRole] = useState(null);
 
-    // Handle opening the custom menu
+    // Fetch user role from Supabase
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            try {
+                const { data: user, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error('Error fetching user:', error.message);
+                    Alert.alert('Error', 'Unable to fetch user data.');
+                    return;
+                }
+
+                const { data, error: roleError } = await supabase
+                    .from('users') // Assuming a `users` table exists
+                    .select('role')
+                    .eq('id', user?.user?.id) // Use the authenticated user's ID
+                    .single();
+
+                if (roleError) {
+                    console.error('Error fetching role:', roleError.message);
+                    Alert.alert('Error', 'Unable to fetch user role.');
+                } else {
+                    setRole(data.role);
+                }
+            } catch (err) {
+                console.error('Unexpected Error:', err);
+                Alert.alert('Error', 'Something went wrong while fetching user role.');
+            }
+        };
+
+        fetchUserRole();
+    }, []);
+
     const openMenu = () => setMenuVisible(true);
     const closeMenu = () => setMenuVisible(false);
 
-    // Menu options functionality
     const handleMenuOption = (option) => {
         closeMenu();
-        if (option === "Logout") {
-            navigation.navigate("Login");
-        } else if (option === "RoleSelection") {
-            navigation.navigate("RoleSelection");
+        if (option === 'Logout') {
+            navigation.navigate('Login');
+        } else if (option === 'RoleSelection') {
+            navigation.navigate('RoleSelection');
+        } else if (option === 'AdminDashboard') {
+            navigation.navigate('AdminDashboard');
         }
     };
 
@@ -40,16 +73,26 @@ export default function FritidsledareDashboard() {
                     <View style={styles.modalContainer}>
                         <TouchableOpacity
                             style={styles.modalOption}
-                            onPress={() => handleMenuOption("Logout")}
+                            onPress={() => handleMenuOption('Logout')}
                         >
                             <Text style={styles.modalOptionText}>Logout</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.modalOption}
-                            onPress={() => handleMenuOption("RoleSelection")}
-                        >
-                            <Text style={styles.modalOptionText}>Go to Role Selection</Text>
-                        </TouchableOpacity>
+                        {role === 'fritidsledare' && (
+                            <TouchableOpacity
+                                style={styles.modalOption}
+                                onPress={() => handleMenuOption('RoleSelection')}
+                            >
+                                <Text style={styles.modalOptionText}>Go to Role Selection</Text>
+                            </TouchableOpacity>
+                        )}
+                        {role === 'admin' && (
+                            <TouchableOpacity
+                                style={styles.modalOption}
+                                onPress={() => handleMenuOption('AdminDashboard')}
+                            >
+                                <Text style={styles.modalOptionText}>Go to Admin Dashboard</Text>
+                            </TouchableOpacity>
+                        )}
                         <TouchableOpacity
                             style={[styles.modalOption, styles.cancelOption]}
                             onPress={closeMenu}

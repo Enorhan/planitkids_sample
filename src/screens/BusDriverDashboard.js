@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { supabase } from '../../supabaseClient';
-import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function BusDriverDashboard({ route, navigation }) {
     const [buses, setBuses] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     const { user } = route.params || {};
     const driverId = user?.id;
-    const schoolId = user?.school_id;
+
+    const openMenu = () => setMenuVisible(true);
+    const closeMenu = () => setMenuVisible(false);
+
+    const handleMenuOption = async (option) => {
+        closeMenu();
+        if (option === 'Logout') {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    console.error('Logout Error:', error.message);
+                    Alert.alert('Error', 'Failed to log out. Please try again.');
+                } else {
+                    navigation.replace('Login'); // Redirect to login page
+                }
+            } catch (err) {
+                console.error('Unexpected Error:', err);
+                Alert.alert('Error', 'Something went wrong. Please try again.');
+            }
+        }
+    };
 
     const fetchBuses = async () => {
         if (!driverId) {
@@ -23,8 +44,6 @@ export default function BusDriverDashboard({ route, navigation }) {
         setLoading(true);
 
         try {
-            console.log('Fetching buses for Driver ID:', driverId);
-
             const { data: busesData, error } = await supabase
                 .from('buses')
                 .select('id, name')
@@ -38,7 +57,6 @@ export default function BusDriverDashboard({ route, navigation }) {
                 console.log('No buses found for Driver ID:', driverId);
                 setBuses([]);
             } else {
-                console.log('Fetched Buses Data:', busesData);
                 setBuses(busesData);
             }
         } catch (err) {
@@ -46,16 +64,6 @@ export default function BusDriverDashboard({ route, navigation }) {
             Alert.alert('Unexpected Error', 'Something went wrong while fetching buses.');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error('Logout Error:', error.message);
-            Alert.alert('Error', 'Failed to log out. Please try again.');
-        } else {
-            navigation.replace('Login'); // Redirect to login page
         }
     };
 
@@ -69,19 +77,38 @@ export default function BusDriverDashboard({ route, navigation }) {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Menu>
-                    <MenuTrigger style={styles.menuTrigger}>
-                        <Text style={styles.menuText}>⋮</Text>
-                    </MenuTrigger>
-                    <MenuOptions>
-                        <MenuOption onSelect={handleLogout}>
-                            <Text style={styles.menuOptionText}>Logout</Text>
-                        </MenuOption>
-                    </MenuOptions>
-                </Menu>
-            </View>
-            <Text style={styles.title}>Welcome, {user?.first_name}!</Text>
+            {/* Three-dotted Menu Button */}
+            <TouchableOpacity style={styles.menuButton} onPress={openMenu}>
+                <MaterialIcons name="more-vert" size={28} color="#FFC0CB" />
+            </TouchableOpacity>
+
+            {/* Modal for Menu Options */}
+            <Modal
+                transparent={true}
+                animationType="fade"
+                visible={menuVisible}
+                onRequestClose={closeMenu}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <TouchableOpacity
+                            style={styles.modalOption}
+                            onPress={() => handleMenuOption('Logout')}
+                        >
+                            <Text style={styles.modalOptionText}>Logout</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.modalOption, styles.cancelOption]}
+                            onPress={closeMenu}
+                        >
+                            <Text style={styles.cancelOptionText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Header and List */}
+            <Text style={styles.title}>Welcome, {user?.first_name || 'Driver'}!</Text>
             <Text style={styles.subHeader}>Select Your Bus:</Text>
             {loading ? (
                 <Text style={styles.loadingText}>Loading buses...</Text>
@@ -91,7 +118,7 @@ export default function BusDriverDashboard({ route, navigation }) {
                 <FlatList
                     contentContainerStyle={styles.scrollContainer}
                     data={buses}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={styles.activityCard}
@@ -109,26 +136,15 @@ export default function BusDriverDashboard({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: '#4B0082',
+        padding: 16,
     },
-    header: {
+    menuButton: {
         position: 'absolute',
-        top: 20,
-        left: 20,
-        zIndex: 1,
-    },
-    menuTrigger: {
-        padding: 10,
-    },
-    menuText: {
-        fontSize: 24,
-        color: '#FFC0CB',
-        fontWeight: 'bold',
-    },
-    menuOptionText: {
-        fontSize: 16,
-        color: '#000',
-        padding: 10,
+        top: 40,
+        left: 16,
     },
     title: {
         fontSize: 24,
@@ -173,5 +189,36 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         textAlign: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        backgroundColor: '#4B0082',
+        width: '80%',
+        borderRadius: 10,
+        padding: 20,
+    },
+    modalOption: {
+        backgroundColor: '#FFC0CB',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    modalOptionText: {
+        color: '#4B0082',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    cancelOption: {
+        backgroundColor: '#4B0082',
+    },
+    cancelOptionText: {
+        color: '#FFC0CB',
+        fontWeight: 'bold',
     },
 });

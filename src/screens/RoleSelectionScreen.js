@@ -66,6 +66,8 @@ export default function RoleSelectionScreen({ navigation }) {
                 console.error('Logout Error:', err.message);
                 Alert.alert('Error', 'Failed to log out. Please try again.');
             }
+        } else if (option === 'DailyRoleSelection') {
+            navigation.replace('DailyRoleSelectionScreen');
         }
     };
 
@@ -106,6 +108,12 @@ export default function RoleSelectionScreen({ navigation }) {
                 >
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContainer}>
+                            <TouchableOpacity
+                                style={styles.modalOption}
+                                onPress={() => handleMenuOption('DailyRoleSelection')}
+                            >
+                                <Text style={styles.modalOptionText}>Go to Daily Role Selection</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.modalOption}
                                 onPress={() => handleMenuOption('Logout')}

@@ -45,8 +45,12 @@ export default function LoginScreen({ navigation }) {
                 navigation.replace('Agenda', { user: userDetails });
             } else if (userDetails.role === 'admin') {
                 navigation.replace('AdminDashboard', { user: userDetails });
+            } else if (userDetails.role === 'fritidsledare' || userDetails.role === 'fritidspersonal') {
+                // Redirect to the DailyRoleSelectionScreen
+                navigation.replace('DailyRoleSelectionScreen', { user: userDetails });
             } else {
-                navigation.replace('RoleSelection', { user: userDetails });
+                // Fallback in case of an unexpected role
+                Alert.alert('Error', 'Unrecognized role. Please contact support.');
             }
         } catch (err) {
             console.error('Unexpected Error:', err);

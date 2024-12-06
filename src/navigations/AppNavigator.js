@@ -18,7 +18,8 @@ import GroupTrack from "../screens/GroupTrack";
 import BusDriverDashboard from '../screens/BusDriverDashboard';
 import BusDetails from "../screens/BusDetails";
 import AdminDashboard from "../screens/admin/AdminDashboard";
-import ViewDashboards from "../screens/admin/ViewDashboards"; // Example // New import
+import ViewDashboards from "../screens/admin/ViewDashboards";
+import DailyRoleSelectionScreen from "../screens/DailyRoleSelectionScreen"; // Example // New import
 
 const Stack = createStackNavigator();
 
@@ -42,6 +43,7 @@ export default function AppNavigator() {
                         <Stack.Screen name="GroupTrack" component={GroupTrack} />
                         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
                         <Stack.Screen name="ViewDashboards" component={ViewDashboards} />
+                        <Stack.Screen name="DailyRoleSelectionScreen" component={DailyRoleSelectionScreen} />
                     </Stack.Navigator>
                 </NavigationContainer>
             </MenuProvider>

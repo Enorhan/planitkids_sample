@@ -30,6 +30,7 @@ export default function FritidsledareDashboard() {
                     console.error('Error fetching role:', roleError.message);
                     Alert.alert('Error', 'Unable to fetch user role.');
                 } else {
+                    console.log('Fetched Role:', data.role); // Debugging
                     setRole(data.role);
                 }
             } catch (err) {
@@ -57,6 +58,11 @@ export default function FritidsledareDashboard() {
 
     return (
         <View style={styles.container}>
+            {/* Display fetched role for debugging */}
+            {role && (
+                <Text style={styles.debugText}>Current Role: {role}</Text>
+            )}
+
             {/* Three-dotted Menu Button */}
             <TouchableOpacity style={styles.menuButton} onPress={openMenu}>
                 <MaterialIcons name="more-vert" size={28} color="#FFC0CB" />
@@ -77,7 +83,7 @@ export default function FritidsledareDashboard() {
                         >
                             <Text style={styles.modalOptionText}>Logout</Text>
                         </TouchableOpacity>
-                        {role === 'fritidsledare' && (
+                        {(role === 'fritidspersonal' || role === 'fritidsledare') && (
                             <TouchableOpacity
                                 style={styles.modalOption}
                                 onPress={() => handleMenuOption('RoleSelection')}
@@ -139,6 +145,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
+    },
+    debugText: {
+        color: '#FFC0CB',
+        fontSize: 16,
+        marginBottom: 10,
     },
     menuButton: {
         position: 'absolute',

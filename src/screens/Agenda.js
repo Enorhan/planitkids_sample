@@ -1,11 +1,12 @@
-// src/screens/Agenda.js
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Modal } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Modal, Alert } from 'react-native';
+import { supabase } from '../../supabaseClient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function Agenda({ navigation }) {
-    const activityOptions = ["Pyssel", "Utomhus", "Film", "Tema Arbete", "Bakning"];
+    const [role, setRole] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [menuVisible, setMenuVisible] = useState(false);
     const [activities, setActivities] = useState([
         {
             activityType: "Pyssel",
@@ -15,15 +16,126 @@ export default function Agenda({ navigation }) {
             profilePictures: ["https://via.placeholder.com/60"],
             description: "Sample activity description.",
             photos: ["https://picsum.photos/200?random=1", "https://picsum.photos/200?random=2"],
-        }
+        },
     ]);
     const [selectedActivityIndex, setSelectedActivityIndex] = useState(null);
 
+    // Fetch user role from Supabase
+    useEffect(() => {
+        const fetchRole = async () => {
+            try {
+                const { data: authData, error: authError } = await supabase.auth.getUser();
+                if (authError) throw new Error(authError.message);
+
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', authData.user.id)
+                    .single();
+                if (userError) throw new Error(userError.message);
+
+                setRole(userData.role);
+            } catch (error) {
+                console.error('Error fetching user role:', error.message);
+                Alert.alert('Error', 'Unable to fetch user role.');
+                navigation.replace('Login'); // Redirect to login if fetching fails
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRole();
+    }, [navigation]);
+
+    const handleMenuOption = (option) => {
+        setMenuVisible(false);
+        if (option === 'Logout') {
+            handleLogout();
+        } else if (option === 'RoleSelection') {
+            navigation.navigate('RoleSelection');
+        } else if (option === 'AdminDashboard') {
+            navigation.navigate('AdminDashboard');
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw new Error(error.message);
+            navigation.replace('Login'); // Redirect to login page
+        } catch (err) {
+            console.error('Logout Error:', err.message);
+            Alert.alert('Error', 'Failed to log out. Please try again.');
+        }
+    };
+
+    const menuOptions = () => {
+        return (
+            <>
+                {/* Show 'Go to Role Selection' for fritidsledare and fritidspersonal */}
+                {(role === 'fritidspersonal' || role === 'fritidsledare') && (
+                    <TouchableOpacity
+                        style={styles.modalOption}
+                        onPress={() => handleMenuOption('RoleSelection')}
+                    >
+                        <Text style={styles.modalOptionText}>Go to Role Selection</Text>
+                    </TouchableOpacity>
+                )}
+                {/* Show 'Go to Admin Dashboard' for admins */}
+                {role === 'admin' && (
+                    <TouchableOpacity
+                        style={styles.modalOption}
+                        onPress={() => handleMenuOption('AdminDashboard')}
+                    >
+                        <Text style={styles.modalOptionText}>Go to Admin Dashboard</Text>
+                    </TouchableOpacity>
+                )}
+                {/* Show Logout Option */}
+                <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => handleMenuOption('Logout')}
+                >
+                    <Text style={styles.modalOptionText}>Logout</Text>
+                </TouchableOpacity>
+                {/* Cancel Option */}
+                <TouchableOpacity
+                    style={[styles.modalOption, styles.cancelOption]}
+                    onPress={() => setMenuVisible(false)}
+                >
+                    <Text style={styles.cancelOptionText}>Cancel</Text>
+                </TouchableOpacity>
+            </>
+        );
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
+            {/* Menu Button */}
+            <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+                <MaterialIcons name="more-vert" size={28} color="#FFC0CB" />
             </TouchableOpacity>
+
+            {/* Custom Modal for Menu Options */}
+            {menuVisible && (
+                <Modal
+                    transparent={true}
+                    animationType="fade"
+                    visible={menuVisible}
+                    onRequestClose={() => setMenuVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>{menuOptions()}</View>
+                    </View>
+                </Modal>
+            )}
 
             <Text style={styles.title}>Agenda</Text>
 
@@ -68,6 +180,7 @@ export default function Agenda({ navigation }) {
                 ))}
             </ScrollView>
 
+            {/* Modal for Activity Description */}
             {selectedActivityIndex !== null && (
                 <Modal visible={true} transparent={true} animationType="slide">
                     <View style={styles.modalOverlay}>
@@ -83,7 +196,10 @@ export default function Agenda({ navigation }) {
                                 ))}
                             </ScrollView>
 
-                            <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedActivityIndex(null)}>
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setSelectedActivityIndex(null)}
+                            >
                                 <Text style={styles.closeButtonText}>Close</Text>
                             </TouchableOpacity>
                         </View>
@@ -112,7 +228,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#4B0082',
     },
-    backButton: {
+    menuButton: {
         position: 'absolute',
         top: 40,
         left: 16,
@@ -199,11 +315,30 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    modalContent: {
+    modalContainer: {
         backgroundColor: '#4B0082',
         padding: 20,
         borderRadius: 10,
-        width: '90%',
+        width: '80%',
+    },
+    modalOption: {
+        backgroundColor: '#FFC0CB',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    modalOptionText: {
+        color: '#4B0082',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    cancelOption: {
+        backgroundColor: '#4B0082',
+    },
+    cancelOptionText: {
+        color: '#FFC0CB',
+        fontWeight: 'bold',
     },
     modalTitle: {
         color: '#FFC0CB',

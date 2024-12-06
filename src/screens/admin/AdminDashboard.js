@@ -101,18 +101,29 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     button: {
-        backgroundColor: '#FFC0CB',
+        backgroundColor: '#FFC0CB', // Sticker-like pastel color
         paddingVertical: 15,
-        paddingHorizontal: 25,
-        borderRadius: 10,
-        marginBottom: 20,
+        paddingHorizontal: 20,
+        borderRadius: 50, // Rounded edges for sticker shape
+        marginVertical: 10,
         width: '80%',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5, // For Android shadow
+        borderWidth: 2,
+        borderColor: '#FF69B4', // Contrasting border
     },
     buttonText: {
         color: '#4B0082',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Poppins_600SemiBold', // Choose a playful font if available
+        textShadowColor: '#FFB6C1', // Subtle shadow for text
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     modalOverlay: {
         flex: 1,

@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '../../supabaseClient';
 import * as ImagePicker from "expo-image-picker";
 import { KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import {Calendar} from "react-native-calendars";
 
 
 
@@ -24,6 +25,42 @@ export default function WhatsToday({ navigation }) {
             isExpanded: false
         }
     ]);
+
+    // Function to calculate week number
+    const getWeekNumber = (date) => {
+        const target = new Date(date);
+        // Set to nearest Thursday: current date + 4 - current day number
+        // Make Sunday's day number 7 for ISO 8601 compliance
+        const dayNr = (target.getDay() + 6) % 7;
+        target.setDate(target.getDate() - dayNr + 3);
+
+        // January 4th is always in the first ISO week
+        const firstThursday = new Date(target.getFullYear(), 0, 4);
+        const diff = target - firstThursday;
+
+        // Calculate full weeks to nearest Thursday
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
+        return 1 + Math.floor(diff / oneWeek);
+    };
+    // Format the current date
+    const formatDate = (date) => {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return new Intl.DateTimeFormat('en-US', options).format(date);
+    };
+
+    // Formatting Utilities
+    const formatDateDisplay = (date) => {
+        const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+        return new Intl.DateTimeFormat('en-US', options).format(date);
+    };
+
+    const formatWeekNumber = (date) => {
+        const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+        const pastDaysOfYear = (date - firstDayOfYear + 86400000) / 86400000;
+        return `Week ${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`;
+    };
+
+    const [activeModal, setActiveModal] = useState(null); // 'description' or 'feedback'
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const [teacherSelectModalVisible, setTeacherSelectModalVisible] = useState(false);
     const [assigningTeacherForIndex, setAssigningTeacherForIndex] = useState(null);
@@ -35,6 +72,15 @@ export default function WhatsToday({ navigation }) {
     const [editingTeacherModalVisible, setEditingTeacherModalVisible] = useState(false);
     const [teacherToEdit, setTeacherToEdit] = useState(null); // This will store the user object of the teacher clicked
     const [editingTeacherForIndex, setEditingTeacherForIndex] = useState(null); // Which activity's teacher we are editing
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
+    const [currentWeek, setCurrentWeek] = useState([]);
+    const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+    const [feedbackText, setFeedbackText] = useState('');
+    const currentDate = new Date(selectedDate);
+    const weekNumber = getWeekNumber(currentDate);
+    const formattedDate = formatDate(currentDate);
+    const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
+    const [weeklyActivities, setWeeklyActivities] = useState({});
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -91,6 +137,38 @@ export default function WhatsToday({ navigation }) {
     }, []);
 
     useEffect(() => {
+        const fetchWeeklyActivities = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .in('date', currentWeek); // Fetch activities for the whole week
+
+                if (error) throw error;
+
+                const groupedActivities = currentWeek.reduce((acc, day) => {
+                    acc[day] = [];
+                    return acc;
+                }, {});
+
+                // Group activities by date
+                (data || []).forEach((activity) => {
+                    const date = activity.date;
+                    if (groupedActivities[date]) {
+                        groupedActivities[date].push(activity);
+                    }
+                });
+
+                setWeeklyActivities(groupedActivities);
+            } catch (err) {
+                console.error('Error fetching weekly activities:', err.message);
+            }
+        };
+
+        fetchWeeklyActivities();
+    }, [currentWeek]); // Refetch whenever the week changes
+
+    useEffect(() => {
         const fetchTodayActivities = async () => {
             try {
                 const { data, error } = await supabase
@@ -114,6 +192,64 @@ export default function WhatsToday({ navigation }) {
         fetchTodayActivities();
     }, [today]);
 
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .eq('date', selectedDate); // Fetch based on selected date
+
+                if (error) throw error;
+
+                const activitiesWithDefaults = (data || []).map((act) => ({
+                    ...act,
+                    assigned_profiles: act.assigned_profiles || [], // Ensure assigned_profiles is an array
+                    isExpanded: false,
+                }));
+                setActivities(activitiesWithDefaults);
+            } catch (err) {
+                console.error('Error fetching activities:', err.message);
+                setActivities([]); // Reset activities if error
+            }
+        };
+
+        fetchActivities();
+    }, [selectedDate]); // Refetch when selectedDate changes
+
+
+    // Initialize the current week
+    useEffect(() => {
+        setCurrentWeek(getWeekFromDate(today));
+    }, []);
+
+    const getWeekFromDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = date.getDay();
+        // Adjust so Monday is the first day of the week
+        const diff = (day === 0 ? -6 : 1) - day; // Sunday becomes -6, others shift accordingly
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() + diff); // Set to Monday
+
+        const week = Array.from({ length: 7 }, (_, i) => {
+            const day = new Date(startOfWeek);
+            day.setDate(startOfWeek.getDate() + i);
+            return day.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        });
+        return week;
+    };
+
+    const goToPreviousWeek = () => {
+        const firstDayOfWeek = new Date(currentWeek[0]);
+        firstDayOfWeek.setDate(firstDayOfWeek.getDate() - 7); // Go back 7 days
+        setCurrentWeek(getWeekFromDate(firstDayOfWeek.toISOString().split('T')[0]));
+    };
+
+    const goToNextWeek = () => {
+        const lastDayOfWeek = new Date(currentWeek[6]);
+        lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 7); // Go forward 7 days
+        setCurrentWeek(getWeekFromDate(lastDayOfWeek.toISOString().split('T')[0]));
+    };
 
 
     const handleAssignTeacher = (activityIndex, user) => {
@@ -125,6 +261,11 @@ export default function WhatsToday({ navigation }) {
             }
             return updated;
         });
+    };
+
+    const handleAddDescription = (index) => {
+        setSelectedActivityIndex(index);
+        setDescriptionModalVisible(true);
     };
 
     const removeAssignedTeacher = (activityIndex, userId) => {
@@ -302,6 +443,31 @@ export default function WhatsToday({ navigation }) {
         }
     };
 
+    const saveFeedbackToSupabase = async (index, feedback) => {
+        try {
+            const activity = activities[index];
+            if (!activity.id) {
+                Alert.alert('Error', 'Activity ID is missing.');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('activities')
+                .update({ feedback })
+                .eq('id', activity.id);
+
+            if (error) {
+                console.error('Supabase update error:', error.message);
+                throw error;
+            }
+
+            Alert.alert('Success', 'Feedback saved successfully.');
+        } catch (err) {
+            console.error('Error saving feedback:', err.message);
+            Alert.alert('Error', 'Unable to save feedback. Please try again.');
+        }
+    };
+
     const addActivity = () => {
         setActivities([...activities, {
             activity_type: "Pyssel",
@@ -343,6 +509,7 @@ export default function WhatsToday({ navigation }) {
             // Reset modal states
             setSelectedActivityIndex(null);
             setTempDescription('');
+            setDescriptionModalVisible(false); // Close only the description modal
         }
     };
 
@@ -353,7 +520,42 @@ export default function WhatsToday({ navigation }) {
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                         <MaterialIcons name="arrow-back" size={24} color="#FFC0CB" />
                     </TouchableOpacity>
-                    <Text style={styles.title}>What's Today (Activity Planner)</Text>
+
+                    {/* Calendar Component */}
+                    <View style={styles.weekView}>
+                        <View style={styles.weekHeader}>
+                            <TouchableOpacity onPress={goToPreviousWeek} style={styles.navigationButton}>
+                                <MaterialIcons name="arrow-back-ios" size={28} color="#FFC0CB" />
+                            </TouchableOpacity>
+                            <View style={styles.textContainer}>
+                                <Text style={styles.primaryDateText}>{formattedDate}</Text>
+                                <View style={styles.weekContainer}>
+                                    <Text style={styles.weekText}>W.{weekNumber}</Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity onPress={goToNextWeek} style={styles.navigationButton}>
+                                <MaterialIcons name="arrow-forward-ios" size={28} color="#FFC0CB" />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView horizontal contentContainerStyle={styles.daysRow}>
+                            {currentWeek.map((day) => (
+                                <TouchableOpacity
+                                    key={day}
+                                    onPress={() => setSelectedDate(day)}
+                                    style={[
+                                        styles.dayContainer,
+                                        day === today && styles.currentDay,
+                                        day === selectedDate && styles.selectedDay,
+                                    ]}
+                                >
+                                    <Text style={styles.dayText}>{new Date(day).getDate()}</Text>
+                                    <Text style={styles.subText}>
+                                        {weeklyActivities[day]?.length || 0} activities
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
                     <ScrollView
                         contentContainerStyle={styles.scrollContainer}
                         keyboardShouldPersistTaps="handled">
@@ -416,7 +618,11 @@ export default function WhatsToday({ navigation }) {
                                             />
                                         </View>
 
-                                        <TouchableOpacity onPress={() => setSelectedActivityIndex(index)}>
+                                        <TouchableOpacity onPress={() => {
+                                            setSelectedActivityIndex(index);
+                                            setTempDescription(activities[index].description || '');
+                                            setActiveModal('description'); // Indicate the active modal
+                                        }}>
                                             <Text style={styles.descriptionText}>
                                                 {activity.description || "Tap to add description"}
                                             </Text>
@@ -489,6 +695,16 @@ export default function WhatsToday({ navigation }) {
                                         >
                                             <Text style={styles.removeButtonText}>Remove Activity</Text>
                                         </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.feedbackButton}
+                                            onPress={() => {
+                                                setSelectedActivityIndex(index);
+                                                setFeedbackText(activity.feedback || ''); // Load feedback
+                                                setActiveModal('feedback'); // Indicate the active modal
+                                            }}
+                                        >
+                                            <Text style={styles.feedbackButtonText}>Give Feedback</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 ) : (
                                     /* Minimized View: Show only activity type */
@@ -519,32 +735,32 @@ export default function WhatsToday({ navigation }) {
                         </Modal>
                     )}
 
-                    {selectedActivityIndex !== null && (
-                        <Modal visible={true} transparent animationType="fade">
-                            <View style={styles.modalOverlay}>
-                                <View style={styles.modalContent}>
-                                    <Text style={styles.modalTitle}>Add Description</Text>
-                                    <TextInput
-                                        style={styles.modalDescriptionInput}
-                                        placeholder="Enter description here"
-                                        placeholderTextColor="#FFC0CB"
-                                        value={tempDescription}
-                                        onChangeText={(text) => setTempDescription(text)}
-                                        multiline
-                                    />
-                                    <TouchableOpacity style={styles.attachPhotoButton} onPress={() => attachPhotoFromPhone(selectedActivityIndex)}>
-                                        <Text style={styles.attachPhotoButtonText}>Attach Photo</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.saveButton} onPress={handleSaveDescription}>
-                                        <Text style={styles.saveButtonText}>Save</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedActivityIndex(null)}>
-                                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </Modal>
-                    )}
+                    {/*{selectedActivityIndex !== null && (*/}
+                    {/*    <Modal visible={true} transparent animationType="fade">*/}
+                    {/*        <View style={styles.modalOverlay}>*/}
+                    {/*            <View style={styles.modalContent}>*/}
+                    {/*                <Text style={styles.modalTitle}>Add Description</Text>*/}
+                    {/*                <TextInput*/}
+                    {/*                    style={styles.modalDescriptionInput}*/}
+                    {/*                    placeholder="Enter description here"*/}
+                    {/*                    placeholderTextColor="#FFC0CB"*/}
+                    {/*                    value={tempDescription}*/}
+                    {/*                    onChangeText={(text) => setTempDescription(text)}*/}
+                    {/*                    multiline*/}
+                    {/*                />*/}
+                    {/*                <TouchableOpacity style={styles.attachPhotoButton} onPress={() => attachPhotoFromPhone(selectedActivityIndex)}>*/}
+                    {/*                    <Text style={styles.attachPhotoButtonText}>Attach Photo</Text>*/}
+                    {/*                </TouchableOpacity>*/}
+                    {/*                <TouchableOpacity style={styles.saveButton} onPress={handleSaveDescription}>*/}
+                    {/*                    <Text style={styles.saveButtonText}>Save</Text>*/}
+                    {/*                </TouchableOpacity>*/}
+                    {/*                <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedActivityIndex(null)}>*/}
+                    {/*                    <Text style={styles.cancelButtonText}>Cancel</Text>*/}
+                    {/*                </TouchableOpacity>*/}
+                    {/*            </View>*/}
+                    {/*        </View>*/}
+                    {/*    </Modal>*/}
+                    {/*)}*/}
 
                     {teacherSelectModalVisible && (
                         <Modal visible={true} transparent animationType="fade">
@@ -608,6 +824,184 @@ export default function WhatsToday({ navigation }) {
                             </View>
                         </Modal>
                     )}
+
+                    {activeModal === 'description' && selectedActivityIndex !== null && (
+                        <Modal visible={true} transparent animationType="fade">
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalContent}>
+                                    <Text style={styles.modalTitle}>Add Description</Text>
+                                    <TextInput
+                                        style={styles.modalDescriptionInput}
+                                        placeholder="Enter description here"
+                                        placeholderTextColor="#FFC0CB"
+                                        value={tempDescription}
+                                        onChangeText={(text) => setTempDescription(text)}
+                                        multiline
+                                    />
+
+                                    {/* Horizontal ScrollView for Photos */}
+                                    {activities[selectedActivityIndex]?.photos?.length > 0 && (
+                                        <ScrollView
+                                            horizontal
+                                            contentContainerStyle={styles.photosScrollContainer}
+                                            showsHorizontalScrollIndicator={false}
+                                        >
+                                            {activities[selectedActivityIndex].photos.map((photo, i) => (
+                                                <View key={i} style={styles.photoWrapper}>
+                                                    <Image
+                                                        source={{ uri: photo }}
+                                                        style={styles.attachedPhoto}
+                                                        resizeMode="cover"
+                                                    />
+                                                    <TouchableOpacity
+                                                        style={styles.removePhotoButton}
+                                                        onPress={() => removePhoto(selectedActivityIndex, i)}
+                                                    >
+                                                        <Text style={styles.removePhotoButtonText}>X</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                        </ScrollView>
+                                    )}
+
+                                    {/* Buttons */}
+                                    <TouchableOpacity
+                                        style={styles.attachPhotoButton}
+                                        onPress={() => attachPhotoFromPhone(selectedActivityIndex)}
+                                    >
+                                        <Text style={styles.attachPhotoButtonText}>Attach Photo</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.saveButton}
+                                        onPress={() => {
+                                            if (selectedActivityIndex !== null) {
+                                                setActivities((prev) => {
+                                                    const updated = [...prev];
+                                                    updated[selectedActivityIndex].description = tempDescription; // Save updated description
+                                                    return updated;
+                                                });
+                                                setActiveModal(null); // Close the modal
+                                                setTempDescription('');
+                                                setSelectedActivityIndex(null);
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.cancelButton}
+                                        onPress={() => {
+                                            setActiveModal(null); // Close the modal
+                                            setTempDescription('');
+                                            setSelectedActivityIndex(null);
+                                        }}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
+                    )}
+
+                    {activeModal === 'feedback' && selectedActivityIndex !== null && (
+                        <Modal visible={true} transparent animationType="fade">
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalContent}>
+                                    <Text style={styles.modalTitle}>Activity Feedback</Text>
+                                    <TextInput
+                                        style={styles.modalDescriptionInput}
+                                        placeholder="Write your feedback here..."
+                                        placeholderTextColor="#FFC0CB"
+                                        value={feedbackText}
+                                        onChangeText={setFeedbackText}
+                                        multiline
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.saveButton}
+                                        onPress={() => {
+                                            if (selectedActivityIndex !== null) {
+                                                setActivities((prev) => {
+                                                    const updated = [...prev];
+                                                    updated[selectedActivityIndex].feedback = feedbackText;
+                                                    return updated;
+                                                });
+
+                                                saveFeedbackToSupabase(selectedActivityIndex, feedbackText); // Save feedback
+                                                setActiveModal(null); // Close the modal
+                                                setFeedbackText('');
+                                                setSelectedActivityIndex(null);
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.saveButtonText}>Save Feedback</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.cancelButton}
+                                        onPress={() => {
+                                            setActiveModal(null); // Close the modal
+                                            setFeedbackText('');
+                                            setSelectedActivityIndex(null);
+                                        }}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </Modal>
+                    )}
+
+                    {/*{feedbackModalVisible && (*/}
+                    {/*    <Modal visible={true} transparent animationType="fade">*/}
+                    {/*        <View style={styles.modalOverlay}>*/}
+                    {/*            <View style={styles.modalContent}>*/}
+                    {/*                <Text style={styles.modalTitle}>Activity Feedback</Text>*/}
+                    {/*                <TextInput*/}
+                    {/*                    style={styles.modalDescriptionInput}*/}
+                    {/*                    placeholder="Write your feedback here..."*/}
+                    {/*                    placeholderTextColor="#FFC0CB"*/}
+                    {/*                    value={feedbackText}*/}
+                    {/*                    onChangeText={setFeedbackText}*/}
+                    {/*                    multiline*/}
+                    {/*                />*/}
+                    {/*                <TouchableOpacity*/}
+                    {/*                    style={styles.saveButton}*/}
+                    {/*                    onPress={() => {*/}
+                    {/*                        if (selectedActivityIndex !== null) {*/}
+                    {/*                            // Update feedback for the specific activity*/}
+                    {/*                            setActivities(prev => {*/}
+                    {/*                                const updated = [...prev];*/}
+                    {/*                                updated[selectedActivityIndex].feedback = feedbackText;*/}
+                    {/*                                return updated;*/}
+                    {/*                            });*/}
+
+                    {/*                            // Save to Supabase*/}
+                    {/*                            saveFeedbackToSupabase(selectedActivityIndex, feedbackText);*/}
+
+                    {/*                            // Reset modal states*/}
+                    {/*                            setFeedbackModalVisible(false);*/}
+                    {/*                            setFeedbackText('');*/}
+                    {/*                            setSelectedActivityIndex(null);*/}
+                    {/*                        }*/}
+                    {/*                    }}*/}
+                    {/*                >*/}
+                    {/*                    <Text style={styles.saveButtonText}>Save Feedback</Text>*/}
+                    {/*                </TouchableOpacity>*/}
+                    {/*                <TouchableOpacity*/}
+                    {/*                    style={styles.cancelButton}*/}
+                    {/*                    onPress={() => {*/}
+                    {/*                        setFeedbackModalVisible(false);*/}
+                    {/*                        setFeedbackText('');*/}
+                    {/*                        setSelectedActivityIndex(null);*/}
+                    {/*                    }}*/}
+                    {/*                >*/}
+                    {/*                    <Text style={styles.cancelButtonText}>Cancel</Text>*/}
+                    {/*                </TouchableOpacity>*/}
+                    {/*            </View>*/}
+                    {/*        </View>*/}
+                    {/*    </Modal>*/}
+                    {/*)}*/}
 
                 </View>
             </TouchableWithoutFeedback>
@@ -813,6 +1207,12 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
         marginBottom: 10,
     },
+    photosScrollContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 10, // Add spacing around the photo section
+    },
+
     attachPhotoButton: {
         backgroundColor: '#FF8C8C',
         padding: 15,
@@ -841,8 +1241,8 @@ const styles = StyleSheet.create({
     },
     removePhotoButton: {
         position: 'absolute',
-        top: 0,
-        right: 0,
+        top: 5,
+        right: 5,
         backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent background
         borderRadius: 15,
         padding: 5,
@@ -859,6 +1259,122 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(255, 192, 203, 0.3)',
     },
-
+    noActivitiesText: {
+        color: '#FFC0CB',
+        fontSize: 16,
+        marginTop: 20,
+        textAlign: 'center',
+    },
+    calendarWrapper: {
+        backgroundColor: '#2E004E',
+        borderRadius: 12,
+        margin: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
+        marginTop: 90
+    },
+    calendar: {
+        borderRadius: 12,
+        padding: 10
+    },
+    feedbackButton: {
+        backgroundColor: '#FF8C8C',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    feedbackButtonText: {
+        color: '#4B0082',
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+    dateContainer: {
+        alignItems: 'center',
+    },
+    weekView: {
+        marginVertical: 20,
+        paddingHorizontal: 10,
+        alignItems: 'center',
+        paddingTop: 50,
+    },
+    dateWrapper: {
+        alignItems: 'center',
+    },
+    secondaryDateText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#FFC0CB',
+        marginTop: 4,
+    },
+    daysRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginVertical: 10,
+    },
+    dayContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+        marginHorizontal: 5,
+        borderRadius: 10,
+        backgroundColor: '#2E004E',
+        elevation: 3,
+    },
+    selectedDay: {
+        borderColor: '#FFC0CB',
+        borderWidth: 2,
+    },
+    currentDay: {
+        backgroundColor: '#ff002d',
+    },
+    dayText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    subText: {
+        fontSize: 12,
+        color: '#FFC0CB',
+    },
+    weekHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingHorizontal: 20,
+        marginVertical: 10,
+        backgroundColor: '#2E004E', // Add a subtle background for better design
+        borderRadius: 12,
+        padding: 10,
+    },
+    textContainer: {
+        alignItems: 'center',
+        flex: 1, // Ensure it takes up available space for alignment
+    },
+    primaryDateText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#FFC0CB',
+    },
+    weekContainer: {
+        backgroundColor: '#FFC0CB', // Container background color
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginTop: 8,
+        elevation: 3, // Add a subtle shadow
+    },
+    weekText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#4B0082', // Text color contrasting with the container
+    },
+    navigationButton: {
+        padding: 10,
+    },
 
 });
